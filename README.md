@@ -5,14 +5,7 @@ The goal of Steamless is to make a single solution for unpacking all Steam DRM p
 
 # Supported Versions
 
-- **SteamStub Variant 1**
-  - Currently this version is not supported yet.  
-- **SteamStub Variant 2**
-  - Support for this version is at: 100% (see below notes)
-    - x64 binaries are not supported.
-    - Overlays are not currently restored.
-    - Some files with specific features (flags) set may not unpack properly.
-- **SteamStub Variant 3**
+- **SteamStub Variant 4** (64-bit version of SteamStub Variant 3)
   - Support for this version is at: 100% (see below notes)
     - x64 binaries are not supported.
     - Overlays are not currently restored.
