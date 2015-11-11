@@ -103,7 +103,7 @@ namespace Steamless.NET
             Console.ForegroundColor = ConsoleColor.Cyan;
             Console.WriteLine("==================================================================");
             Console.ForegroundColor = ConsoleColor.Green;
-            Console.WriteLine("\n>> Steamless.NET v{((AssemblyFileVersionAttribute)Attribute.GetCustomAttribute(Assembly.GetExecutingAssembly(), typeof(AssemblyFileVersionAttribute), false)).Version}\n");
+            Console.WriteLine("\n>> Steamless.NET v{0}\n", ((AssemblyFileVersionAttribute)Attribute.GetCustomAttribute(Assembly.GetExecutingAssembly(), typeof(AssemblyFileVersionAttribute), false)).Version);
             Console.ForegroundColor = ConsoleColor.Magenta;
             Console.WriteLine("(c) 2015 atom0s [atom0s@live.com]");
             Console.ForegroundColor = ConsoleColor.Gray;
