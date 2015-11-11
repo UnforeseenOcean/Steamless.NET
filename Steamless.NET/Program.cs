@@ -121,7 +121,7 @@ namespace Steamless.NET
         /// </summary>
         private static void PrintHelp()
         {
-            Console.WriteLine("{System.AppDomain.CurrentDomain.FriendlyName} [file] [options]\n");
+            Console.WriteLine("{0} [file] [options]\n", System.AppDomain.CurrentDomain.FriendlyName);
             Console.WriteLine("Options:");
             Console.WriteLine("  --keepbind\t\tKeeps the .bind section inside of the unpacked file.");
         }
