@@ -35,9 +35,6 @@ namespace Steamless.NET
         /// <param name="args"></param>
         private static void Main(string[] args)
         {
-            // Override the assembly resolve event for this application..
-            AppDomain.CurrentDomain.AssemblyResolve += CurrentDomainOnAssemblyResolve;
-
             // Print the application header..
             PrintHeader();
 
@@ -53,8 +50,8 @@ namespace Steamless.NET
             else
             {
                 // Load the file and ensure it is valid..
-                var file = new Pe32File(args[0]);
-                if (!file.Parse() || file.IsFile64Bit() || !file.HasSection(".bind"))
+                var file = new Pe64File(args[0]);
+                if (!file.Parse() || file.IsFile32Bit() || !file.HasSection(".bind"))
                     return;
 
                 // Build a list of known unpackers within our local source..
@@ -64,8 +61,8 @@ namespace Steamless.NET
 
                 // Print out the known unpackers we found..
                 Output("Found the following unpackers (internal):", ConsoleOutputType.Info);
-                foreach (var attr in unpackers.Select(unpacker => (SteamStubUnpackerAttribute)unpacker.GetCustomAttributes(typeof(SteamStubUnpackerAttribute)).FirstOrDefault()))
-                    Output($" >> Unpacker: {attr?.Name} - by: {attr?.Author}", ConsoleOutputType.Custom, ConsoleColor.Yellow);
+                foreach (var attr in unpackers.Select(unpacker => (SteamStubUnpackerAttribute)unpacker.GetCustomAttributes(typeof(SteamStubUnpackerAttribute), false).FirstOrDefault()))
+                    Output(string.Format(" >> Unpacker: {0} - by: {1}", attr.Name, attr.Author), ConsoleOutputType.Custom, ConsoleColor.Yellow);
                 Console.WriteLine();
 
                 // Process function to try and handle the file..
@@ -76,7 +73,7 @@ namespace Steamless.NET
 
                         // Attempt to process the file..
                         return (from unpacker in unpackers
-                                let attr = (SteamStubUnpackerAttribute)unpacker.GetCustomAttributes(typeof(SteamStubUnpackerAttribute)).FirstOrDefault()
+                                let attr = (SteamStubUnpackerAttribute)unpacker.GetCustomAttributes(typeof(SteamStubUnpackerAttribute), false).FirstOrDefault()
                                 where attr != null
                                 where Helpers.FindPattern(bindSectionData, attr.Pattern) != 0
                                 select Activator.CreateInstance(unpacker) as SteamStubUnpacker).Select(stubUnpacker => stubUnpacker.Process(file)).FirstOrDefault();
@@ -97,34 +94,6 @@ namespace Steamless.NET
         }
 
         /// <summary>
-        /// Resolves embedded resources to not load from disk.
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="args"></param>
-        /// <returns></returns>
-        private static Assembly CurrentDomainOnAssemblyResolve(object sender, ResolveEventArgs args)
-        {
-            // Obtain the DLL name from the assembly..
-            var dllName = args.Name.Contains(",") ? args.Name.Substring(0, args.Name.IndexOf(",", StringComparison.InvariantCultureIgnoreCase)) : args.Name.Replace(".dll", "");
-            if (dllName.ToLower().EndsWith(".resources"))
-                return null;
-
-            // Build full path to the possible embedded resource..
-            var fullName = $"{Assembly.GetExecutingAssembly().EntryPoint.DeclaringType?.Namespace}.Embedded.{new AssemblyName(args.Name).Name}.dll";
-            using (var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(fullName))
-            {
-                // Return null if we are not valid..
-                if (stream == null)
-                    return null;
-
-                // Read and load the embedded resource..
-                var data = new byte[stream.Length];
-                stream.Read(data, 0, (int)stream.Length);
-                return Assembly.Load(data);
-            }
-        }
-
-        /// <summary>
         /// Prints the header of this application.
         /// </summary>
         private static void PrintHeader()
@@ -134,7 +103,7 @@ namespace Steamless.NET
             Console.ForegroundColor = ConsoleColor.Cyan;
             Console.WriteLine("==================================================================");
             Console.ForegroundColor = ConsoleColor.Green;
-            Console.WriteLine($"\n>> Steamless.NET v{((AssemblyFileVersionAttribute)Attribute.GetCustomAttribute(Assembly.GetExecutingAssembly(), typeof(AssemblyFileVersionAttribute), false)).Version}\n");
+            Console.WriteLine("\n>> Steamless.NET v{((AssemblyFileVersionAttribute)Attribute.GetCustomAttribute(Assembly.GetExecutingAssembly(), typeof(AssemblyFileVersionAttribute), false)).Version}\n");
             Console.ForegroundColor = ConsoleColor.Magenta;
             Console.WriteLine("(c) 2015 atom0s [atom0s@live.com]");
             Console.ForegroundColor = ConsoleColor.Gray;
@@ -152,7 +121,7 @@ namespace Steamless.NET
         /// </summary>
         private static void PrintHelp()
         {
-            Console.WriteLine($"{System.AppDomain.CurrentDomain.FriendlyName} [file] [options]\n");
+            Console.WriteLine("{System.AppDomain.CurrentDomain.FriendlyName} [file] [options]\n");
             Console.WriteLine("Options:");
             Console.WriteLine("  --keepbind\t\tKeeps the .bind section inside of the unpacked file.");
         }
@@ -208,7 +177,10 @@ namespace Steamless.NET
         /// </summary>
         /// <param name="arg"></param>
         /// <returns></returns>
-        public static bool HasArgument(string arg) => Arguments != null && Arguments.Contains(arg.ToLower());
+        public static bool HasArgument(string arg)
+        {
+            return Arguments != null && Arguments.Contains(arg.ToLower());
+        }
 
         /// <summary>
         /// Gets or sets the list of arguments passed to this application on load.

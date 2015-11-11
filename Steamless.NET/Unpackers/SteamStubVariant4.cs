@@ -28,17 +28,16 @@ namespace Steamless.NET.Unpackers
     using System.Security.Cryptography;
 
     /// <summary>
-    /// Steam Stub DRM Unpacker (Variant #3)
-    /// 
-    /// Special thanks to Cyanic (aka Golem_x86) for his assistance.
+    /// Steam Stub DRM Unpacker (Variant #4)
     /// </summary>
     [SteamStubUnpacker(
-        Author = "atom0s (thanks to Cyanic)", Name = "SteamStub Variant #3",
-        Pattern = "E8 00 00 00 00 50 53 51 52 56 57 55 8B 44 24 1C 2D 05 00 00 00 8B CC 83 E4 F0 51 51 51 50")]
-    public class SteamStubVariant3 : SteamStubUnpacker
+        Author = "gibbed",
+        Name = "SteamStub Variant #4",
+        Pattern = "E8 00 00 00 00 50 53 51 52 56 57 55 41 50 41 51 41 52 41 53 41 54 41 55 41 56 41 57 48 8B 4C 24 78 48 81 E9 05 00 00 00 48 8B C4 48 83 E4 F0 50 50 48 83 EC 20")]
+    public class SteamStubVariant4 : SteamStubUnpacker
     {
         /// <summary>
-        /// SteamStub Variant 3 DRM Flags
+        /// SteamStub Variant 4 DRM Flags
         /// </summary>
         public enum DrmFlags
         {
@@ -50,10 +49,10 @@ namespace Steamless.NET.Unpackers
         }
 
         /// <summary>
-        /// SteamStub Variant 3 DRM Header
+        /// SteamStub Variant 4 DRM Header
         /// </summary>
         [StructLayout(LayoutKind.Sequential)]
-        public struct SteamStub32Var3Header
+        public struct SteamStub64Var4Header
         {
             public uint XorKey; // The base XOR key, if defined, to unpack the file with.
             public uint Signature; // 0xC0DEC0DE signature to validate this header is proper.
@@ -102,13 +101,13 @@ namespace Steamless.NET.Unpackers
         }
 
         /// <summary>
-        /// Processes the given file in attempt to unpack the Steam Stub variant 3.
+        /// Processes the given file in attempt to unpack the Steam Stub variant 4.
         /// </summary>
         /// <param name="file"></param>
         /// <returns></returns>
-        public override bool Process(Pe32File file)
+        public override bool Process(Pe64File file)
         {
-            Program.Output("File is packed with SteamStub Variant #3!", ConsoleOutputType.Info);
+            Program.Output("File is packed with SteamStub Variant #4!", ConsoleOutputType.Info);
 
             // Store the file object being processed..
             this.File = file;
@@ -154,13 +153,8 @@ namespace Steamless.NET.Unpackers
             // List of stub sizes..
             var stubSizeList = new List<int>
                 {
-                    // Default v3 Stub Size (Based on structure above.)
-                    Marshal.SizeOf(typeof(SteamStub32Var3Header)),
-
-                    // Variant of v3 stub with a slightly smaller size.
-                    // Known Uses of This Size:
-                    //      --> The Wolf Amoung Us
-                    0xB0
+                    // Default v4 Stub Size (Based on structure above.)
+                    Marshal.SizeOf(typeof(SteamStub64Var4Header)),
                 };
 
             // Loop each stub size and attempt to unpack the stub header..
@@ -170,12 +164,12 @@ namespace Steamless.NET.Unpackers
                 var fileOffset = this.File.GetFileOffsetFromRva(this.File.NtHeaders.OptionalHeader.AddressOfEntryPoint);
 
                 // Read the raw header data from the file data..
-                var headerData = new byte[Marshal.SizeOf(typeof(SteamStub32Var3Header))];
-                Array.Copy(this.File.FileData, (int)(fileOffset - stubSize), headerData, 0, Marshal.SizeOf(typeof(SteamStub32Var3Header)));
+                var headerData = new byte[Marshal.SizeOf(typeof(SteamStub64Var4Header))];
+                Array.Copy(this.File.FileData, (int)(fileOffset - stubSize), headerData, 0, Marshal.SizeOf(typeof(SteamStub64Var4Header)));
 
                 // Decode and obtain the steam stub header..
-                this.XorKey = SteamXor(ref headerData, (uint)Marshal.SizeOf(typeof(SteamStub32Var3Header)));
-                this.StubHeader = Helpers.GetStructure<SteamStub32Var3Header>(headerData);
+                this.XorKey = SteamXor(ref headerData, (uint)Marshal.SizeOf(typeof(SteamStub64Var4Header)));
+                this.StubHeader = Helpers.GetStructure<SteamStub64Var4Header>(headerData);
 
                 // Validate the header signature..
                 if (this.StubHeader.Signature == 0xC0DEC0DE)
@@ -395,7 +389,7 @@ namespace Steamless.NET.Unpackers
             }
             finally
             {
-                fStream?.Dispose();
+                if (fStream != null) fStream.Dispose();
             }
         }
 
@@ -492,7 +486,7 @@ namespace Steamless.NET.Unpackers
         /// <summary>
         /// Gets or sets the file being processed by this unpacker.
         /// </summary>
-        public Pe32File File { get; set; }
+        public Pe64File File { get; set; }
 
         /// <summary>
         /// Gets or sets the current xor key.
@@ -502,7 +496,7 @@ namespace Steamless.NET.Unpackers
         /// <summary>
         /// Gets or sets the steam stub header.
         /// </summary>
-        public SteamStub32Var3Header StubHeader { get; set; }
+        public SteamStub64Var4Header StubHeader { get; set; }
 
         /// <summary>
         /// Gets or sets the code section.

@@ -23,17 +23,16 @@ namespace Steamless.NET.Classes
     using System.IO;
     using System.Linq;
     using System.Runtime.InteropServices;
-    using static Structures;
 
     /// <summary>
-    /// Portable Executable (32bit) .NET Class
+    /// Portable Executable (64bit) .NET Class
     /// </summary>
-    public class Pe32File
+    public class Pe64File
     {
         /// <summary>
         /// Default Constructor
         /// </summary>
-        public Pe32File()
+        public Pe64File()
         {
         }
 
@@ -41,7 +40,7 @@ namespace Steamless.NET.Classes
         /// Overloaded Constructor
         /// </summary>
         /// <param name="file"></param>
-        public Pe32File(string file)
+        public Pe64File(string file)
         {
             this.FilePath = file;
         }
@@ -54,7 +53,7 @@ namespace Steamless.NET.Classes
         public bool Parse(string file = null)
         {
             // Prepare the class variables for usage..
-            this.Sections = new List<ImageSectionHeader>();
+            this.Sections = new List<Structures.ImageSectionHeader>();
             this.DosStubSize = 0;
             this.DosStubOffset = 0;
             this.DosStubData = null;
@@ -71,22 +70,22 @@ namespace Steamless.NET.Classes
             this.FileData = File.ReadAllBytes(this.FilePath);
 
             // Some simple sanity checks..
-            if (this.FileData.Length < (Marshal.SizeOf(typeof(ImageDosHeader)) + Marshal.SizeOf(typeof(ImageNtHeaders32))))
+            if (this.FileData.Length < (Marshal.SizeOf(typeof(Structures.ImageDosHeader)) + Marshal.SizeOf(typeof(Structures.ImageNtHeaders64))))
                 return false;
 
             // Read the file headers..
-            this.DosHeader = Helpers.GetStructure<ImageDosHeader>(this.FileData);
-            this.NtHeaders = Helpers.GetStructure<ImageNtHeaders32>(this.FileData, this.DosHeader.e_lfanew);
+            this.DosHeader = Helpers.GetStructure<Structures.ImageDosHeader>(this.FileData);
+            this.NtHeaders = Helpers.GetStructure<Structures.ImageNtHeaders64>(this.FileData, this.DosHeader.e_lfanew);
 
             // Ensure the file headers are valid..
             if (!this.DosHeader.IsValid || !this.NtHeaders.IsValid)
                 return false;
 
             // Store the dos stub if one exists..
-            this.DosStubSize = (uint)(this.DosHeader.e_lfanew - Marshal.SizeOf(typeof(ImageDosHeader)));
+            this.DosStubSize = (uint)(this.DosHeader.e_lfanew - Marshal.SizeOf(typeof(Structures.ImageDosHeader)));
             if (this.DosStubSize > 0)
             {
-                this.DosStubOffset = (uint)Marshal.SizeOf(typeof(ImageDosHeader));
+                this.DosStubOffset = (uint)Marshal.SizeOf(typeof(Structures.ImageDosHeader));
                 this.DosStubData = new byte[this.DosStubSize];
                 Array.Copy(this.FileData, this.DosStubOffset, this.DosStubData, 0, this.DosStubSize);
             }
@@ -105,9 +104,9 @@ namespace Steamless.NET.Classes
         /// Determines if the current pe file is 64bit.
         /// </summary>
         /// <returns></returns>
-        public bool IsFile64Bit()
+        public bool IsFile32Bit()
         {
-            return (this.NtHeaders.FileHeader.Machine & (uint)MachineType.X64) == (uint)MachineType.X64;
+            return (this.NtHeaders.FileHeader.Machine & (uint)Structures.MachineType.X64) == (uint)Structures.MachineType.I386;
         }
 
         /// <summary>
@@ -125,7 +124,7 @@ namespace Steamless.NET.Classes
         /// </summary>
         /// <param name="name"></param>
         /// <returns></returns>
-        public ImageSectionHeader GetSection(string name)
+        public Structures.ImageSectionHeader GetSection(string name)
         {
             return this.Sections.FirstOrDefault(s => string.Compare(s.SectionName, name, StringComparison.InvariantCultureIgnoreCase) == 0);
         }
@@ -135,7 +134,7 @@ namespace Steamless.NET.Classes
         /// </summary>
         /// <param name="rva"></param>
         /// <returns></returns>
-        public ImageSectionHeader GetOwnerSection(uint rva)
+        public Structures.ImageSectionHeader GetOwnerSection(ulong rva)
         {
             foreach (var s in this.Sections)
             {
@@ -149,7 +148,7 @@ namespace Steamless.NET.Classes
                     return s;
             }
 
-            return default(ImageSectionHeader);
+            return default(Structures.ImageSectionHeader);
         }
 
         /// <summary>
@@ -172,7 +171,7 @@ namespace Steamless.NET.Classes
         /// </summary>
         /// <param name="va"></param>
         /// <returns></returns>
-        public uint GetRvaFromVa(uint va)
+        public ulong GetRvaFromVa(ulong va)
         {
             return va - this.NtHeaders.OptionalHeader.ImageBase;
         }
@@ -182,10 +181,10 @@ namespace Steamless.NET.Classes
         /// </summary>
         /// <param name="rva"></param>
         /// <returns></returns>
-        public uint GetFileOffsetFromRva(uint rva)
+        public uint GetFileOffsetFromRva(ulong rva)
         {
             var section = this.GetOwnerSection(rva);
-            return (rva - (section.VirtualAddress - section.PointerToRawData));
+            return (uint)(rva - (section.VirtualAddress - section.PointerToRawData));
         }
 
         /// <summary>
@@ -212,12 +211,12 @@ namespace Steamless.NET.Classes
         /// <summary>
         /// Gets or sets the dos header.
         /// </summary>
-        public ImageDosHeader DosHeader { get; set; }
+        public Structures.ImageDosHeader DosHeader { get; set; }
 
         /// <summary>
         /// Gets or sets the NT headers.
         /// </summary>
-        public ImageNtHeaders32 NtHeaders { get; set; }
+        public Structures.ImageNtHeaders64 NtHeaders { get; set; }
 
         /// <summary>
         /// Gets or sets the dos stub size (if present).
@@ -237,6 +236,6 @@ namespace Steamless.NET.Classes
         /// <summary>
         /// Gets or sets the list of file sections.
         /// </summary>
-        public List<ImageSectionHeader> Sections { get; set; }
+        public List<Structures.ImageSectionHeader> Sections { get; set; }
     }
 }

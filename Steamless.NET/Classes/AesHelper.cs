@@ -89,7 +89,7 @@ namespace Steamless.NET.Classes
         /// <param name="disposing"></param>
         protected virtual void Dispose(bool disposing)
         {
-            this.m_AesCryptoProvider?.Dispose();
+            if (this.m_AesCryptoProvider != null) this.m_AesCryptoProvider.Dispose();
             this.m_AesCryptoProvider = null;
         }
 
@@ -159,9 +159,9 @@ namespace Steamless.NET.Classes
             }
             finally
             {
-                cStream?.Dispose();
-                mStream?.Dispose();
-                decryptor?.Dispose();
+                if (cStream != null) cStream.Dispose();
+                if (mStream != null) mStream.Dispose();
+                if (decryptor != null) decryptor.Dispose();
             }
         }
     }

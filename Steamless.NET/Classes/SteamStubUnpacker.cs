@@ -28,6 +28,6 @@ namespace Steamless.NET.Classes
         /// </summary>
         /// <param name="file"></param>
         /// <returns></returns>
-        public abstract bool Process(Pe32File file);
+        public abstract bool Process(Pe64File file);
     }
 }

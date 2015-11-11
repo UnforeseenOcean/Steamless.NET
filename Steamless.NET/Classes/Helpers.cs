@@ -22,7 +22,6 @@ namespace Steamless.NET.Classes
     using System.Collections.Generic;
     using System.Linq;
     using System.Runtime.InteropServices;
-    using static Structures;
 
     /// <summary>
     /// Helper functions used throughout Steamless.NET.
@@ -71,13 +70,13 @@ namespace Steamless.NET.Classes
         /// <param name="dosHeader"></param>
         /// <param name="ntHeaders"></param>
         /// <returns></returns>
-        public static ImageSectionHeader GetSection(byte[] rawData, int index, ImageDosHeader dosHeader, ImageNtHeaders32 ntHeaders)
+        public static Structures.ImageSectionHeader GetSection(byte[] rawData, int index, Structures.ImageDosHeader dosHeader, Structures.ImageNtHeaders64 ntHeaders)
         {
-            var sectionSize = Marshal.SizeOf(typeof(ImageSectionHeader));
-            var optionalHeaderOffset = Marshal.OffsetOf(typeof(ImageNtHeaders32), "OptionalHeader").ToInt32();
+            var sectionSize = Marshal.SizeOf(typeof(Structures.ImageSectionHeader));
+            var optionalHeaderOffset = Marshal.OffsetOf(typeof(Structures.ImageNtHeaders64), "OptionalHeader").ToInt32();
             var dataOffset = dosHeader.e_lfanew + optionalHeaderOffset + ntHeaders.FileHeader.SizeOfOptionalHeader;
 
-            return GetStructure<ImageSectionHeader>(rawData, dataOffset + (index * sectionSize));
+            return GetStructure<Structures.ImageSectionHeader>(rawData, dataOffset + (index * sectionSize));
         }
 
         /// <summary>
